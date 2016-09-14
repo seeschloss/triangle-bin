@@ -5,7 +5,11 @@ d3.triangleBin = function() {
       y = function(d) { return d[1]; };
   
   function triangleBin(data) {
-    var points = data.map(function(d) { return [x(d), y(d)]; });
+    var points = data.map(function(d) {
+      d[0] = x(d);
+      d[1] = y(d);
+      return d;
+    });
     
     var triangles = createTriangleGrid(size, sideLength)
       .map(function(d) { d.points = []; return d; });
