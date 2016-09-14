@@ -1,6 +1,7 @@
 d3.triangleBin = function() {
   var size = [400, 300],
       sideLength = 30,
+      alignment = "straight",
       x = function(d) { return d[0]; },
       y = function(d) { return d[1]; };
   
@@ -11,7 +12,7 @@ d3.triangleBin = function() {
       return d;
     });
     
-    var triangles = createTriangleGrid(size, sideLength)
+    var triangles = createTriangleGrid(size, sideLength, alignment)
       .map(function(d) { d.points = []; return d; });
     
     // TODO: Optimize binning. This brute force search is slow. 
@@ -19,7 +20,9 @@ d3.triangleBin = function() {
     // Bin points in triangles
     points.forEach(function(point, i) {
       for (var i = 0; i < triangles.length; i++) {
-        if (pointInTriangle(triangles[i], point)) triangles[i].points.push(point);
+        if (pointInTriangle(triangles[i], point)) {
+          triangles[i].points.push(point);
+        }
       }
     });
     
@@ -48,6 +51,12 @@ d3.triangleBin = function() {
     return triangleBin;
   };
   
+  triangleBin.alignment = function(_) {
+    if (!arguments.length) return alignment;
+    alignment = _;
+    return triangleBin;
+  };
+  
   triangleBin.x = function(_) {
     if (!arguments.length) return x;
     x = _;
@@ -69,25 +78,27 @@ d3.triangleBin = function() {
   return triangleBin;
   
   // Creates an array of triangles that covers the area of the canvas
-  function createTriangleGrid(size, sideLength) {
-    
+  function createTriangleGrid(size, sideLength, alignment) {
     var triangles = [],
         rc = sideLength / Math.sqrt(3), // maximum radius of circumscribing circle
         ri = rc / 2;                    // maximum radius of inscribing circle
-        
-   
-    // upward pointing triangle
-    for (var x = sideLength/2; x <= size[0] + sideLength; x += sideLength) {
-      for (var y = rc - ri; y <= size[1] + sideLength; y += rc + ri) {
-        var triangle = createTriangle([x, y], sideLength, "up");
-        triangles.push(triangle);
+
+
+    var parity = 0;
+    var offset = 0;
+    for (var y = 0; y <= size[1] + sideLength; y += rc + ri) {
+      parity += 1;
+      if (alignment == "hex" && parity % 2) {
+        offset = sideLength/2;
+      } else {
+        offset = 0;
       }
-    }
-    
-    // downward pointing triangles
-    for (var x = 0; x <= size[0] + sideLength; x += sideLength) {
-      for (var y = 0; y <= size[1] + sideLength; y += rc + ri) {
-        var triangle = createTriangle([x, y], sideLength, "down");
+
+      for (var x = 0; x <= size[0] + sideLength; x += sideLength) {
+        var triangle = createTriangle([x + offset, y + (rc - ri)], sideLength, "up");
+        triangles.push(triangle);
+
+        var triangle = createTriangle([x + offset + sideLength/2, y], sideLength, "down");
         triangles.push(triangle);
       }
     }
